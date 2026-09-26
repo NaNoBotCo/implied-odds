@@ -1,0 +1,391 @@
+<!doctype html><html lang="en" translate="no" class="notranslate"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Implied Odds — poker math, dirt simple</title><meta name="description" content="Implied odds in Texas Hold'em, explained plain and drawn with the arithmetic left in. A live calculator: pick your draw, the pot and the bet, and see whether the pot alone pays — or whether the river money makes the call.">
+<link rel="canonical" href="https://nanobotco.github.io/implied-odds/">
+<link rel="icon" href="/implied-odds/icon.svg" type="image/svg+xml">
+<meta property="og:title" content="Implied Odds — poker math, dirt simple">
+<meta property="og:description" content="Pot odds tell you what's on the table. Implied odds count the money you ain't won yet. A live calculator and a plain-spoken walk-through.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://nanobotco.github.io/implied-odds/">
+<meta name="author" content="Nan · hongdam.net">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{
+ --ink:#17120e; --paper:#f4ecdd; --panel:#fffaf0; --felt:#1f6b45; --felt-line:#15583a;
+ --line:#d8c9ae; --accent:#b7222a; --accent2:#e08a1e; --muted:#6a5c48; --good:#1f7a4d;
+ --display:"Bebas Neue","Oswald","Arial Narrow",system-ui,sans-serif;
+ --head:"Oswald",system-ui,sans-serif;
+ --body:Georgia,"Iowan Old Style","Times New Roman",serif;
+ --mono:"SFMono-Regular",Menlo,Consolas,monospace;
+ --radius:12px;
+}
+@media (prefers-color-scheme:dark){
+ :root{--ink:#f0e6d6; --paper:#12100e; --panel:#1b1714; --line:#3a3128;
+  --accent:#ef4b4b; --accent2:#f0b04a; --muted:#a6947c; --good:#4cc487;
+  --felt:#17573a; --felt-line:#0e3d28;}
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:19px;line-height:1.62}
+.wrap{max-width:46rem;margin:0 auto;padding:0 1.1rem}
+a{color:var(--accent);text-underline-offset:.16em}
+a:hover{color:var(--accent2)}
+h1,h2,h3{font-family:var(--head);font-weight:600;line-height:1.15;letter-spacing:.01em}
+h2{font-size:1.7rem;margin:2.4rem 0 .6rem;border-bottom:2px solid var(--line);padding-bottom:.3rem}
+h3{font-size:1.2rem;margin:1.6rem 0 .4rem;color:var(--muted);font-weight:500}
+p{margin:.7rem 0}
+code{font-family:var(--mono);font-size:.9em;background:rgba(128,110,80,.14);padding:.05em .35em;border-radius:5px}
+header.top{border-bottom:4px solid var(--accent);background:var(--panel)}
+header.top .wrap{display:flex;flex-wrap:wrap;gap:.4rem 1rem;align-items:baseline;padding:.7rem 1.1rem}
+.mark{font-family:var(--display);font-size:1.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);text-decoration:none;white-space:nowrap}
+.mark b{color:var(--accent);font-weight:400}
+.tag{color:var(--muted);font-size:.82rem}
+.hero{background:var(--panel);border-bottom:1px solid var(--line);padding:1.4rem 0 1.8rem}
+.hero h1{font-family:var(--display);font-size:clamp(2.6rem,9vw,4.4rem);letter-spacing:.02em;text-transform:uppercase;margin:0 0 .3rem;line-height:.95}
+.hero .sub{font-size:1.08rem;color:var(--muted);max-width:38rem}
+
+/* cards */
+.hand{display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin:1.2rem 0 .4rem}
+.grp{display:flex;gap:.4rem}
+.grp .lab{font-family:var(--head);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem;display:block}
+.card{width:58px;height:82px;background:#fff;border:1px solid #b4b2a9;border-radius:9px;display:flex;flex-direction:column;justify-content:center;align-items:center;box-shadow:0 1px 0 rgba(0,0,0,.12)}
+.card .r{font-family:var(--head);font-size:23px;font-weight:600;line-height:1}
+.card .s{font-size:20px;line-height:1.1}
+.red{color:#b3181f}.blk{color:#232120}
+.plus{align-self:center;color:var(--muted);font-size:.9rem;padding-bottom:1.4rem}
+
+/* calculator */
+.calc{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem 1.1rem 1.3rem;margin:1.4rem 0}
+.calc h2{margin-top:.2rem;border:0;padding:0;font-size:1.35rem;color:var(--ink)}
+.ctrls{display:grid;grid-template-columns:1fr;gap:1rem;margin-top:.9rem}
+.field label{display:block;font-family:var(--head);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.35rem}
+select,input[type=number]{width:100%;font-family:var(--body);font-size:1rem;padding:.55rem .6rem;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:flex;gap:.4rem;flex-wrap:wrap}
+.seg button{flex:1 1 auto;font-family:var(--head);font-size:.9rem;padding:.5rem .3rem;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.outnum{font-family:var(--display);font-size:1.4rem;color:var(--accent)}
+
+/* deck bar */
+.deck{display:flex;flex-wrap:wrap;gap:3px;margin:.5rem 0 .2rem}
+.pip{width:15px;height:21px;border-radius:3px;background:var(--line)}
+.pip.out{background:var(--accent)}
+.deck-cap{font-size:.82rem;color:var(--muted)}
+
+/* verdict panels */
+.out-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1.1rem}
+@media(max-width:34rem){.out-grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:.8rem .9rem}
+.stat .k{font-family:var(--head);font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.stat .v{font-family:var(--display);font-size:2rem;line-height:1;margin-top:.15rem}
+.stat .n{font-size:.82rem;color:var(--muted);margin-top:.25rem}
+.verdict{margin-top:1rem;border-radius:10px;padding:.9rem 1rem;border:1px solid var(--line);font-size:1.02rem}
+.verdict.call{background:rgba(31,122,77,.13);border-color:var(--good)}
+.verdict.fold{background:rgba(183,34,42,.12);border-color:var(--accent)}
+.verdict.free{background:rgba(224,138,30,.14);border-color:var(--accent2)}
+.verdict b{font-family:var(--head);text-transform:uppercase;letter-spacing:.04em}
+.work{font-family:var(--mono);font-size:.82rem;color:var(--muted);margin-top:.5rem;line-height:1.5;white-space:pre-wrap}
+.chart-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem;margin:1.4rem 0}
+.chart-wrap h2{border:0;margin:.2rem 0 .4rem;font-size:1.35rem;color:var(--ink);padding:0}
+.chartsvg{width:100%;height:auto;display:block;margin-top:.5rem}
+.dialrow{margin-top:.9rem}
+.dialrow .field{flex:1}
+.legend{display:flex;gap:1.1rem;flex-wrap:wrap;font-size:.82rem;color:var(--muted);margin-top:.6rem}
+.legend span{display:inline-flex;align-items:center}
+.legend i{display:inline-block;width:18px;height:0;border-top:3px solid currentColor;margin-right:.35rem}
+.chartstat{display:flex;gap:1.4rem;flex-wrap:wrap;margin-top:.8rem;font-size:.92rem}
+.chartstat div{line-height:1.3}
+.chartstat b{font-family:var(--display);font-size:1.5rem;display:block}
+.chartstat .lbl{font-family:var(--head);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+
+table{width:100%;border-collapse:collapse;margin:.8rem 0;font-size:.94rem}
+th,td{text-align:left;padding:.42rem .5rem;border-bottom:1px solid var(--line)}
+th{font-family:var(--head);text-transform:uppercase;letter-spacing:.05em;font-size:.76rem;color:var(--muted)}
+td.n{font-family:var(--mono);text-align:right}
+.note{font-size:.9rem;color:var(--muted);border-left:3px solid var(--line);padding:.2rem 0 .2rem .8rem;margin:1rem 0}
+footer{border-top:1px solid var(--line);margin-top:2.6rem;padding:1.3rem 0 2.4rem;color:var(--muted);font-size:.86rem}
+footer a{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style></head>
+<body>
+<header class="top"><div class="wrap"><a class="mark" href="./"><b>&#9829;</b> Implied Odds</a><span class="tag">poker math, dirt simple · Nan · hongdam.net</span></div></header>
+
+<section class="hero"><div class="wrap">
+<h1>Implied Odds</h1>
+<p class="sub">Pot odds tell you what's starin' at you on the table. Implied odds count the money you ain't won yet — the pile the other feller pays you when your draw comes in. Here's the whole thing, plain, with the arithmetic left in and a calculator you can poke.</p>
+</div></section>
+
+<main class="wrap">
+
+<h2 class="sr">The example hand</h2>
+<div class="hand" aria-label="You hold ace of hearts and king of hearts. The board is queen of hearts, seven of hearts, two of clubs.">
+ <div class="grp"><div><span class="lab">what you hold</span><div style="display:flex;gap:.4rem">
+   <div class="card"><span class="r red">A</span><span class="s red">&#9829;</span></div>
+   <div class="card"><span class="r red">K</span><span class="s red">&#9829;</span></div>
+ </div></div></div>
+ <span class="plus">+</span>
+ <div class="grp"><div><span class="lab">the board</span><div style="display:flex;gap:.4rem">
+   <div class="card"><span class="r red">Q</span><span class="s red">&#9829;</span></div>
+   <div class="card"><span class="r red">7</span><span class="s red">&#9829;</span></div>
+   <div class="card"><span class="r blk">2</span><span class="s blk">&#9827;</span></div>
+ </div></div></div>
+</div>
+<p>Four hearts. One more heart and you got the nut flush — the best hand possible. Trouble is, you ain't got it yet. It's a <em>draw</em>. The question every hand: is it worth payin' to chase?</p>
+
+<div class="calc" aria-label="Implied odds calculator">
+<h2><i>&#9827;</i> Try it — the calculator</h2>
+<div class="ctrls">
+ <div class="field">
+  <label for="draw">Your draw</label>
+  <select id="draw">
+   <option value="9" selected>Flush draw &mdash; 9 outs</option>
+   <option value="8">Open-ended straight &mdash; 8 outs</option>
+   <option value="15">Flush + open-ended &mdash; 15 outs</option>
+   <option value="12">Flush + gutshot &mdash; 12 outs</option>
+   <option value="4">Gutshot straight &mdash; 4 outs</option>
+   <option value="6">Two overcards &mdash; 6 outs</option>
+   <option value="4b">Two pair &rarr; full house &mdash; 4 outs</option>
+   <option value="2">Pair &rarr; set &mdash; 2 outs</option>
+   <option value="custom">Custom&hellip;</option>
+  </select>
+ </div>
+ <div class="field" id="customwrap" hidden>
+  <label for="outs">Custom outs: <span class="outnum" id="outsval">9</span></label>
+  <input type="range" id="outs" min="1" max="21" value="9">
+ </div>
+ <div class="field">
+  <label>Where are you?</label>
+  <div class="seg" id="street" role="group" aria-label="cards to come">
+   <button type="button" data-come="1" aria-pressed="true">On the turn &mdash; 1 card to come</button>
+   <button type="button" data-come="2" aria-pressed="false">On the flop &mdash; 2 cards to come</button>
+  </div>
+ </div>
+ <div class="row2">
+  <div class="field"><label for="pot">Pot before the bet ($)</label><input type="number" id="pot" min="0" step="1" value="100"></div>
+  <div class="field"><label for="bet">Villain's bet ($)</label><input type="number" id="bet" min="0" step="1" value="50"></div>
+ </div>
+ <div class="field"><label for="stack">Money left behind (his stack, $)</label><input type="number" id="stack" min="0" step="1" value="300"></div>
+</div>
+
+<div class="deck" id="deck" aria-hidden="true"></div>
+<div class="deck-cap" id="deckcap"></div>
+
+<div class="out-grid">
+ <div class="stat"><div class="k">Chance you hit</div><div class="v" id="pHit">&mdash;</div><div class="n" id="pOdds"></div></div>
+ <div class="stat"><div class="k">Pot odds you're gettin'</div><div class="v" id="potOdds">&mdash;</div><div class="n" id="potNeed"></div></div>
+</div>
+
+<div class="verdict" id="verdict"><b>&mdash;</b></div>
+<div class="work" id="work"></div>
+</div>
+
+<h2>What pot odds are</h2>
+<p>Pot odds is the price the pot's layin' you, right now, this second. The other feller bets, and you ask one question: <em>what do I stand to win, against what it costs me to call?</em></p>
+<p>Say the pot's $100 and he bets $50. Now there's $150 sittin' out there, and it costs you $50 to see the next card. You're gettin' $150 to win for $50 to call — <code>150 &divide; 50 = 3</code>, so <strong>3 to 1</strong>. Every 4 times you call this spot, you gotta win once just to break even on the money.</p>
+<p>Now, how often do you win? Nine hearts fill your flush. With one card to come there's 47 cards you can't see, so <code>9 &divide; 47 &asymp; 19%</code> — about <strong>4 to 1 against</strong>. And there's the rub: the pot pays 3 to 1, the draw needs 4 to 1. On pot odds alone, this call <em>loses money</em>. Fold and go fishin'.</p>
+
+<h2>What implied odds are</h2>
+<p>Here's the part that turns a losin' call into a winner. You ain't gotta make all your money from the pot that's out there <em>now</em>. When that heart lands on the river, the other feller can't see your flush comin' — and he'll pay you off. That future money counts too.</p>
+<p>So the real question ain't "does the pot pay 4 to 1 today?" It's "<strong>will the pot plus the money I squeeze on the river</strong> pay 4 to 1?" That's implied odds. Same call, bigger prize, 'cause you're countin' tomorrow's pile.</p>
+<p>The arithmetic: to break even at 4 to 1 you need to win about <code>4 &times; your call</code> total when you hit. In the $50 spot that's <code>4 &times; $50 = $200-ish</code>. The pot's only $150. So you need to drag another <strong>~$60</strong> outta him on the river. He's got a deep stack and no idea what's comin'? He'll pay. <strong>Now it's a call.</strong></p>
+
+<section class="chart-wrap" aria-label="Outcomes over many hands">
+<h2><i>&#9824;</i> Grind it out &mdash; the same spot, over and over</h2>
+<p style="margin:.2rem 0">One call don't mean much. Poker's the long run. Here's your chips over <strong>150</strong> plays of the exact spot in the calculator &mdash; the bold line is what you'd expect, the faint ones are luck havin' its way. Turn the dial: that's how much you drag outta him on the river each time you hit. Watch the bold line tip from goin' broke to gettin' paid.</p>
+<svg id="chart" class="chartsvg" viewBox="0 0 680 300" role="img" aria-labelledby="chartdesc"></svg>
+<div id="chartdesc" class="sr"></div>
+<div class="legend">
+ <span id="legev"><i></i>expected chips</span>
+ <span style="color:var(--muted)"><i style="opacity:.55"></i>five runs of pure luck</span>
+</div>
+<div class="dialrow"><div class="field">
+ <label for="payoff">River payoff dial &mdash; what he pays when you hit: <span class="outnum" id="payval">$60</span></label>
+ <input type="range" id="payoff" min="0" max="600" step="5" value="60">
+</div></div>
+<div class="chartstat" id="chartstat"></div>
+</section>
+
+<h2>Where folks get burnt</h2>
+<h3>You gotta actually get paid</h3>
+<p>Implied odds is money you're <em>countin' on</em>, not money in hand. If he's short-stacked, or he checks it down, or he folds the second a third heart hits the board — that river money's a ghost. No payoff, no implied odds, and your fold-worthy call stays fold-worthy.</p>
+<h3>Loud draws pay less than sneaky ones</h3>
+<p>Three hearts on the board and everybody at the table sees the flush comin'. He shuts down; you win nothin' extra. The draws that pay fat are the quiet ones — a gutshot, a set that don't show — 'cause he keeps bettin' into a hand he don't believe you have.</p>
+<h3>Reverse implied odds — the flip side</h3>
+<p>Sometimes you hit your draw and you're <em>still</em> beat, and now you're the one payin' off. Chasin' the low end of a straight, or an ace-high flush when he's got the king-high&hellip; no, wait — chasin' a weak flush when a bigger one's out there. When hittin' costs you money instead of makin' it, that's reverse implied odds, and it's where bankrolls go to die. The calculator below counts the good kind; keep the bad kind in the back of your mind.</p>
+
+<h2>The outs cheat-sheet</h2>
+<p>Count your outs, then eyeball the odds. Two handy rules of thumb: the <strong>rule of 4</strong> (outs &times; 4 &asymp; your % with two cards to come) and the <strong>rule of 2</strong> (outs &times; 2 &asymp; your % with one card to come).</p>
+<table>
+<thead><tr><th>Draw</th><th class="n">Outs</th><th class="n">Flop &rarr; river</th><th class="n">Turn &rarr; river</th></tr></thead>
+<tbody>
+<tr><td>Pair &rarr; set</td><td class="n">2</td><td class="n">8%</td><td class="n">4%</td></tr>
+<tr><td>Gutshot straight</td><td class="n">4</td><td class="n">17%</td><td class="n">9%</td></tr>
+<tr><td>Two pair &rarr; full house</td><td class="n">4</td><td class="n">17%</td><td class="n">9%</td></tr>
+<tr><td>Two overcards</td><td class="n">6</td><td class="n">24%</td><td class="n">13%</td></tr>
+<tr><td>Open-ended straight</td><td class="n">8</td><td class="n">32%</td><td class="n">17%</td></tr>
+<tr><td>Flush draw</td><td class="n">9</td><td class="n">35%</td><td class="n">19%</td></tr>
+<tr><td>Flush + gutshot</td><td class="n">12</td><td class="n">45%</td><td class="n">26%</td></tr>
+<tr><td>Flush + open-ended</td><td class="n">15</td><td class="n">54%</td><td class="n">33%</td></tr>
+</tbody>
+</table>
+<p class="note">The exact figures come off the real card counts, not the rules of thumb — 9 outs with two cards to come is <code>1 &minus; (38&divide;47)(37&divide;46) = 35.0%</code>, not the rule-of-4's 36%. Close enough at the table; exact in the calculator.</p>
+
+<p class="note">This is math, not gospel. It says nothing about position, about who's got a read on who, or about the fella who calls with everything and pays you off anyway. Count your outs, know your price, and remember the money you're chasin' has to actually show up.</p>
+
+</main>
+
+<footer><div class="wrap">
+<p>Nan · <a href="https://hongdam.net">hongdam.net</a> · Text and diagrams <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>, code <a href="https://opensource.org/licenses/MIT">MIT</a>. Every figure computed in the page from the card counts shown.</p>
+<p><a href="https://github.com/NaNoBotCo/implied-odds">Source on GitHub</a></p>
+</div></footer>
+
+<script>
+(function(){
+ var $=function(id){return document.getElementById(id);};
+ var come=1;
+ var S={p:0,totalPot:0,call:0,stack:0}; // shared state for the chart
+ var drawSel=$('draw'), customWrap=$('customwrap'), outsSlider=$('outs'), outsVal=$('outsval');
+ var comb=function(n,k){if(k>n)return 0;var r=1;for(var i=0;i<k;i++){r=r*(n-i)/(i+1);}return r;};
+ function currentOuts(){
+  var v=drawSel.value;
+  if(v==='custom')return parseInt(outsSlider.value,10);
+  if(v==='4b')return 4;
+  return parseInt(v,10);
+ }
+ function hitProb(outs,cardsToCome){
+  var unseen=47; // 52 - 2 hole - 3 board
+  if(cardsToCome===1)return outs/unseen;
+  return 1 - (comb(unseen-outs,2)/comb(unseen,2)); // two cards: 1 - P(miss both)
+ }
+ function fmtOdds(p){ if(p<=0)return '—'; var against=(1-p)/p; return against.toFixed(1).replace(/\.0$/,'')+' to 1'; }
+ function money(x){ return '$'+Math.round(x).toLocaleString(); }
+ function signed(x){ var r=Math.round(x); if(r===0)return '$0'; return (r<0?'−$':'+$')+Math.abs(r).toLocaleString(); }
+ function drawDeck(outs){
+  var d=$('deck'); d.innerHTML='';
+  for(var i=0;i<47;i++){var s=document.createElement('span');s.className='pip'+(i<outs?' out':'');d.appendChild(s);}
+  $('deckcap').textContent=outs+' of 47 unseen cards fill your hand (the red ones).';
+ }
+ // seeded PRNG so the luck-runs stay stable while you turn the dial
+ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+ function renderChart(){
+  var svg=$('chart'); var W=680,H=300, padL=52,padR=14,padT=16,padB=30;
+  var p=S.p, totalPot=S.totalPot, call=S.call;
+  var pay=$('payoff'); var R=Math.max(0,parseFloat(pay.value)||0);
+  $('payval').textContent=money(R);
+  var N=150;
+  // net chips per spot: hit -> +totalPot + R ; miss -> -call
+  var evPer = p*(totalPot+R) - (1-p)*call;
+  // deterministic expected line + 5 seeded random walks
+  var exp=[], runs=[[],[],[],[],[]];
+  var rng=[mulberry32(1),mulberry32(7),mulberry32(23),mulberry32(99),mulberry32(404)];
+  var cum=[0,0,0,0,0];
+  for(var i=0;i<=N;i++){
+   exp.push(i*evPer);
+   for(var r=0;r<5;r++){
+    if(i>0){ cum[r]+= (rng[r]()<p) ? (totalPot+R) : (-call); }
+    runs[r].push(cum[r]);
+   }
+  }
+  var all=exp.slice(); for(var r2=0;r2<5;r2++){all=all.concat(runs[r2]);} all.push(0);
+  var lo=Math.min.apply(null,all), hi=Math.max.apply(null,all);
+  if(hi-lo<1){hi+=1;lo-=1;}
+  var pad=(hi-lo)*0.08; lo-=pad; hi+=pad;
+  var X=function(i){return padL+(i/N)*(W-padL-padR);};
+  var Y=function(v){return padT+(1-(v-lo)/(hi-lo))*(H-padT-padB);};
+  function poly(arr){var s='';for(var i=0;i<arr.length;i++){s+=(i?' ':'')+X(i).toFixed(1)+','+Y(arr[i]).toFixed(1);}return s;}
+  var evColor= evPer>=0 ? 'var(--good)' : 'var(--accent)';
+  var s='';
+  // zero line
+  var y0=Y(0);
+  s+='<line x1="'+padL+'" y1="'+y0.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y0.toFixed(1)+'" style="stroke:var(--line);stroke-width:1"/>';
+  s+='<text x="'+(padL-6)+'" y="'+(y0+3).toFixed(1)+'" text-anchor="end" style="fill:var(--muted);font-size:11px;font-family:var(--mono)">0</text>';
+  // top & bottom value labels
+  s+='<text x="'+(padL-6)+'" y="'+(padT+4)+'" text-anchor="end" style="fill:var(--muted);font-size:11px;font-family:var(--mono)">'+money(hi)+'</text>';
+  s+='<text x="'+(padL-6)+'" y="'+(H-padB+4)+'" text-anchor="end" style="fill:var(--muted);font-size:11px;font-family:var(--mono)">'+money(lo)+'</text>';
+  // x labels
+  s+='<text x="'+padL+'" y="'+(H-padB+18)+'" style="fill:var(--muted);font-size:11px;font-family:var(--head)">0 hands</text>';
+  s+='<text x="'+(W-padR)+'" y="'+(H-padB+18)+'" text-anchor="end" style="fill:var(--muted);font-size:11px;font-family:var(--head)">'+N+' hands</text>';
+  // luck runs (faint)
+  for(var r3=0;r3<5;r3++){ s+='<polyline points="'+poly(runs[r3])+'" fill="none" style="stroke:var(--muted);stroke-width:1.2;opacity:.4"/>'; }
+  // expected line (bold, coloured by sign)
+  s+='<polyline points="'+poly(exp)+'" fill="none" style="stroke:'+evColor+';stroke-width:3;stroke-linejoin:round"/>';
+  svg.innerHTML=s;
+  // legend colour + stats
+  $('legev').style.color=evColor;
+  var breakevenR=((1-p)*call)/p-totalPot;
+  var after=N*evPer;
+  var cs=$('chartstat');
+  cs.innerHTML=
+   '<div><span class="lbl">Per hand, on average</span><b style="color:'+evColor+'">'+signed(evPer)+'</b></div>'+
+   '<div><span class="lbl">After '+N+' hands</span><b style="color:'+evColor+'">'+signed(after)+'</b></div>'+
+   '<div><span class="lbl">Break-even payoff</span><b>'+money(Math.max(0,breakevenR))+'</b></div>';
+  $('chartdesc').textContent='Expected chips over '+N+' plays: '+(evPer>=0?'rising':'falling')+' at '+money(evPer)+' per hand with a river payoff of '+money(R)+'. Break-even payoff is '+money(Math.max(0,breakevenR))+'.';
+ }
+
+ function render(){
+  var outs=currentOuts();
+  var pot=Math.max(0,parseFloat($('pot').value)||0);
+  var bet=Math.max(0,parseFloat($('bet').value)||0);
+  var stack=Math.max(0,parseFloat($('stack').value)||0);
+  outsVal.textContent=outs;
+  drawDeck(outs);
+  var p=hitProb(outs,come);
+  var totalPot=pot+bet, call=bet;
+  S={p:p,totalPot:totalPot,call:call,stack:stack};
+  $('pHit').textContent=(p*100).toFixed(0)+'%';
+  $('pOdds').textContent='about '+fmtOdds(p)+' against';
+  var vr=$('verdict'), work=$('work');
+  if(call<=0){
+   $('potOdds').textContent='—';
+   $('potNeed').textContent='no bet to call';
+   vr.className='verdict free'; vr.innerHTML='<b>It’s free</b> — nobody bet, so take the card for nothin’ and see if it comes.';
+   work.textContent='';
+  } else {
+   var potRatio=totalPot/call;
+   var needP=call/(totalPot+call); // break-even probability on pot odds
+   $('potOdds').textContent=potRatio.toFixed(1).replace(/\.0$/,'')+' to 1';
+   $('potNeed').textContent='you need to win '+(needP*100).toFixed(0)+'% of the time';
+   var Xn=((1-p)*call)/p-totalPot; // extra needed on the river
+   var w='';
+   w+='chance to hit      p = '+(p*100).toFixed(1)+'%  ('+fmtOdds(p)+' against)\n';
+   w+='pot odds           '+money(totalPot)+' to win / '+money(call)+' to call = '+potRatio.toFixed(1)+' to 1\n';
+   w+='break-even needs   p ≥ '+(needP*100).toFixed(1)+'%';
+   if(p>=needP){
+    vr.className='verdict call';
+    vr.innerHTML='<b>Call.</b> The pot already pays enough — you don’t even need the river money. Pure pot odds make this a winner.';
+    w+='   ✅ met by the pot alone\n';
+   } else {
+    w+='   ❌ short — pot alone says fold\n';
+    w+='implied odds       need to win '+money(totalPot)+' + X total when you hit\n';
+    w+='                   X = (1−p)·call ÷ p − pot = '+money(Math.max(0,Xn))+' more on the river\n';
+    if(Xn<=stack){
+     vr.className='verdict call';
+     vr.innerHTML='<b>Call — on implied odds.</b> The pot alone falls short, but if you squeeze about <strong>'+money(Xn)+'</strong> more out of him when the card hits, the call turns a profit. He’s got '+money(stack)+' behind — he can pay it.';
+     w+='                   he has '+money(stack)+' behind ≥ '+money(Xn)+'  ✅ he can pay\n';
+    } else {
+     vr.className='verdict fold';
+     vr.innerHTML='<b>Fold.</b> You’d need about <strong>'+money(Xn)+'</strong> more on the river to make this call pay — but he’s only got '+money(stack)+' behind. Even stackin’ him off don’t cover the chase.';
+     w+='                   he has only '+money(stack)+' behind < '+money(Xn)+'  ❌ can’t pay it\n';
+    }
+   }
+   work.textContent=w;
+  }
+  // keep the dial in range of the stack, then draw the chart
+  var pay=$('payoff'); pay.max=Math.max(50,Math.round(stack));
+  if(parseFloat(pay.value)>pay.max)pay.value=pay.max;
+  renderChart();
+ }
+ drawSel.addEventListener('change',function(){customWrap.hidden=(drawSel.value!=='custom');render();});
+ outsSlider.addEventListener('input',render);
+ ['pot','bet','stack'].forEach(function(id){$(id).addEventListener('input',render);});
+ $('payoff').addEventListener('input',renderChart);
+ var segBtns=$('street').querySelectorAll('button');
+ segBtns.forEach(function(b){b.addEventListener('click',function(){
+  segBtns.forEach(function(x){x.setAttribute('aria-pressed','false');});
+  b.setAttribute('aria-pressed','true'); come=parseInt(b.dataset.come,10); render();
+ });});
+ render();
+})();
+</script>
+</body></html>

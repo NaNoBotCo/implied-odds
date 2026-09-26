@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: "Implied Odds: a plain-spoken explainer of implied odds in Texas Hold'em"
+message: "If you use this text, the calculator or the chart, cite as below and keep the credit line."
+type: software
+authors:
+  - name: "Nan"
+    website: "https://hongdam.net"
+repository-code: "https://github.com/NaNoBotCo/implied-odds"
+url: "https://nanobotco.github.io/implied-odds/"
+license: CC-BY-4.0
+date-released: "2026-09-26"
+keywords:
+  - poker
+  - texas holdem
+  - implied odds
+  - pot odds
+  - outs
+  - expected value
+  - probability
+  - explainer

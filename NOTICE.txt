@@ -1,0 +1,14 @@
+Implied Odds — what is in this repository, and under what terms.
+
+CODE — the calculator and chart script inside docs/index.html
+    SPDX-License-Identifier: MIT — see LICENSE-CODE.
+
+TEXT AND PAGES — docs/index.html, docs/404.html, docs/icon.svg, README.md
+    SPDX-License-Identifier: CC-BY-4.0 — see LICENSE. Credit line: "Nan · hongdam.net ·
+    CC BY 4.0", with a link to https://nanobotco.github.io/implied-odds/ .
+    The card figures and the outcomes chart are drawn by the page from the card counts and
+    the formulas shown. None is traced from, or a copy of, anyone else's image.
+
+MATH
+    Hit probabilities are exact hypergeometric counts off the 47 unseen cards. Pot-odds and
+    implied-odds formulas are standard; each is printed on the page with its result.
